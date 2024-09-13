@@ -3,6 +3,10 @@ pub mod proof;
 pub mod sparse_merkle_tree;
 pub mod tree_hasher;
 pub mod error;
+pub mod account;
+pub mod transaction;
+
+pub mod tree_sparse_merkle;
 
 #[cfg(test)]
 mod tests;
