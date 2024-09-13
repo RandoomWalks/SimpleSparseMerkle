@@ -1,0 +1,12 @@
+[package]
+name = "SimpleSparseMerkle"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bytes = "1.2"
+digest = "0.10"
+sha2 = "0.10" # Example hash function
+
+[dev-dependencies]
+rand = "0.8" # For testing random values
