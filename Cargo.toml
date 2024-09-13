@@ -20,6 +20,12 @@ tracing="*"
 tracing-subscriber="*"
 contracts = "0.6"
 proptest = "1.0"
+dhat = "0.3.3"
 
 [dev-dependencies]
 rand = "0.8" # For testing random values
+criterion = "0.3"
+
+
+[features]
+debug-logs = []
