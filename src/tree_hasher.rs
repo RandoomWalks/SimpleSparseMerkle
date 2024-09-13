@@ -1,41 +1,41 @@
-use bytes::Bytes;
-use digest::{generic_array::GenericArray, Digest};
-use digest::OutputSizeUser;
+use digest::{Digest, Output};
+use crate::Hash;
+use digest::generic_array::GenericArray;
 
-/// Simple hasher struct for computing hashes
-pub struct TreeHasher<H> {
-    zero_value: Bytes,
-    _marker: core::marker::PhantomData<H>,
+
+pub struct TreeHasher<D: Digest> {
+    _marker: std::marker::PhantomData<D>,
 }
 
-impl<H: Digest + OutputSizeUser> TreeHasher<H> {
+impl<D: Digest> TreeHasher<D> {
     pub fn new() -> Self {
-        Self {
-            zero_value: vec![0; <H as OutputSizeUser>::output_size()].into(), // Specify `OutputSizeUser`
-            _marker: Default::default(),
-        }
+        Self { _marker: std::marker::PhantomData }
     }
 
-    pub fn digest(&self, data: impl AsRef<[u8]>) -> Vec<u8> {
-        H::digest(data).to_vec() // Convert to Vec<u8>
+    pub fn digest_leaf(&self, key: &Hash, value: &Hash) -> Hash {
+        let mut hasher = D::new();
+        hasher.update([0u8]); // Leaf prefix
+        hasher.update(key);
+        hasher.update(value);
+        self.finalize_to_array(hasher)
     }
 
-    pub fn digest_leaf(&self, path: &[u8], value: &[u8]) -> Bytes {
-        let mut data = Vec::with_capacity(1 + path.len() + value.len());
-        data.push(0); // LEAF_PREFIX
-        data.extend_from_slice(path);
-        data.extend_from_slice(value);
-        Bytes::from(H::digest(&data).to_vec()) // Convert GenericArray to Vec<u8>, then to Bytes
+    pub fn digest_node(&self, left: &Hash, right: &Hash) -> Hash {
+        let mut hasher = D::new();
+        hasher.update([1u8]); // Node prefix
+        hasher.update(left);
+        hasher.update(right);
+        self.finalize_to_array(hasher)
     }
 
-    pub fn digest_node(&self, left: &[u8], right: &[u8]) -> Bytes {
-        let mut data = Vec::with_capacity(1 + left.len() + right.len());
-        data.push(1); // NODE_PREFIX
-        data.extend_from_slice(left);
-        data.extend_from_slice(right);
-        Bytes::from(H::digest(&data).to_vec()) // Convert GenericArray to Vec<u8>, then to Bytes
+    pub fn zero_hash(&self) -> Hash {
+        [0u8; 32]
     }
-    pub fn zero_value(&self) -> Bytes {
-        self.zero_value.clone()
+
+    fn finalize_to_array(&self, hasher: D) -> Hash {
+        let result = hasher.finalize();
+        let mut hash = [0u8; 32];
+        hash.copy_from_slice(&result);
+        hash
     }
 }

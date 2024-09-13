@@ -1,55 +1,32 @@
-
-use bytes::Bytes;
-use digest::Digest;
 use std::collections::HashMap;
+use crate::Hash;
 
-/// Trait for a simple key-value store abstraction
 pub trait KVStore {
-    type Hasher: Digest;
     type Error;
 
-    fn get(&self, key: &[u8]) -> Result<Option<Bytes>, Self::Error>;
-    fn set(&mut self, key: Bytes, value: Bytes) -> Result<(), Self::Error>;
-    fn remove(&mut self, key: &[u8]) -> Result<(), Self::Error>;
+    fn get(&self, key: &Hash) -> Result<Option<Vec<u8>>, Self::Error>;
+    fn set(&mut self, key: Hash, value: Vec<u8>) -> Result<(), Self::Error>;
 }
 
-
-
-/// Simple in-memory key-value store for testing purposes
-pub struct SimpleKVStore<H: Digest> {
-    map: HashMap<Vec<u8>, Bytes>, // Use Vec<u8> as the key type for the HashMap
-    _marker: core::marker::PhantomData<H>,
+pub struct InMemoryKVStore {
+    store: HashMap<Hash, Vec<u8>>,
 }
 
-impl<H: Digest> SimpleKVStore<H> {
-    /// Creates a new SimpleKVStore instance
+impl InMemoryKVStore {
     pub fn new() -> Self {
-        SimpleKVStore {
-            map: HashMap::new(),
-            _marker: core::marker::PhantomData,
-        }
+        Self { store: HashMap::new() }
     }
 }
 
-// Implement the KVStore trait for SimpleKVStore
-impl<H: Digest> KVStore for SimpleKVStore<H> {
-    type Hasher = H;
-    type Error = String; // Using String as a simplified error type for demonstration
+impl KVStore for InMemoryKVStore {
+    type Error = std::io::Error;
 
-    /// Retrieves a value by key
-    fn get(&self, key: &[u8]) -> Result<Option<Bytes>, Self::Error> {
-        Ok(self.map.get(key).cloned()) // Return a clone of the value if it exists
+    fn get(&self, key: &Hash) -> Result<Option<Vec<u8>>, Self::Error> {
+        Ok(self.store.get(key).cloned())
     }
 
-    /// Inserts or updates a value by key
-    fn set(&mut self, key: Bytes, value: Bytes) -> Result<(), Self::Error> {
-        self.map.insert(key.to_vec(), value); // Insert or update the key-value pair
-        Ok(())
-    }
-
-    /// Removes a value by key
-    fn remove(&mut self, key: &[u8]) -> Result<(), Self::Error> {
-        self.map.remove(key); // Remove the key-value pair if it exists
+    fn set(&mut self, key: Hash, value: Vec<u8>) -> Result<(), Self::Error> {
+        self.store.insert(key, value);
         Ok(())
     }
 }
